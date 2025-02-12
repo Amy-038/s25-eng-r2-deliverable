@@ -3,13 +3,13 @@
 import { Separator } from "@/components/ui/separator";
 import { TypographyH2 } from "@/components/ui/typography";
 import { createBrowserSupabaseClient } from "@/lib/client-utils";
+import type { Database } from "@/lib/schema";
 import { redirect } from "next/navigation";
-import AddSpeciesDialog from "./add-species-dialog";
-import SpeciesCard from "./species-card";
 import { useEffect, useState } from "react";
 import Loading from "../loading";
+import AddSpeciesDialog from "./add-species-dialog";
 import Searchbar from "./searchbar";
-import type { Database } from "@/lib/schema";
+import SpeciesCard from "./species-card";
 
 export default function SpeciesList() {
   type Species = Database["public"]["Tables"]["species"]["Row"];
@@ -17,9 +17,9 @@ export default function SpeciesList() {
   const [loading, setLoading] = useState(true);
   const [speciesList, setSpeciesList] = useState<Species[]>([]);
   const [filteredSpecies, setFilteredSpecies] = useState<Species[]>([]);
-  const [userId,setUserId] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
 
-  useEffect(()=>{
+  useEffect(() => {
     const fetchSpecies = async () => {
       const supabase = createBrowserSupabaseClient();
 
@@ -34,7 +34,7 @@ export default function SpeciesList() {
 
       // Obtain the ID of the currently signed-in user
       const sessionId = session.user.id;
-      setUserId(sessionId)
+      setUserId(sessionId);
 
       const { data: speciesData, error } = await supabase.from("species").select("*").order("id", { ascending: false });
 
@@ -48,8 +48,7 @@ export default function SpeciesList() {
     };
 
     void fetchSpecies();
-
-}, []);
+  }, []);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toLowerCase();
@@ -63,14 +62,14 @@ export default function SpeciesList() {
           species.common_name?.toLowerCase().includes(value) ||
           species.description?.toLowerCase().includes(value)
         );
-      }
+      } 
     });
 
     setFilteredSpecies(searchValue);
   };
 
   if (loading) {
-    return <Loading/>
+    return <Loading />;
   }
   return (
     <>
@@ -83,9 +82,7 @@ export default function SpeciesList() {
       </div>
       <Separator className="my-4" />
       <div className="flex flex-wrap justify-center">
-        {filteredSpecies?.map((species) => (
-          <SpeciesCard key={species.id} species={species} userId={userId} />
-        ))}
+        {filteredSpecies?.map((species) => <SpeciesCard key={species.id} species={species} userId={userId} />)}
       </div>
     </>
   );

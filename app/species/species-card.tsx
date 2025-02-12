@@ -1,21 +1,22 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useState, type MouseEvent, type BaseSyntheticEvent, useEffect } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import type { Database } from "@/lib/schema";
-import Image from "next/image";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { createBrowserSupabaseClient } from "@/lib/client-utils";
-import { z } from "zod";
+import type { Database } from "@/lib/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio";
+import { useEffect, useState, type BaseSyntheticEvent, type MouseEvent } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import Loading from "../loading";
 
 type Species = Database["public"]["Tables"]["species"]["Row"];
 
@@ -42,9 +43,7 @@ const speciesSchema = z.object({
     .string()
     .nullable()
     .transform((val) => (!val || val.trim() === "" ? null : val.trim())),
-  endangered: z
-    .boolean()
-    .nullable(),
+  endangered: z.boolean().nullable(),
   author: z
     .string()
     .trim()
@@ -57,7 +56,7 @@ export default function SpeciesCard({ species, userId }: { species: Species; use
   const [isEditing, setIsEditing] = useState(false);
   const [open, setOpen] = useState<boolean>(false);
   const [authorName, setAuthorName] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const router = useRouter();
 
@@ -78,14 +77,10 @@ export default function SpeciesCard({ species, userId }: { species: Species; use
     mode: "onChange",
   });
 
-  useEffect(()=> {
+  useEffect(() => {
     const fetchAuthorDisplayName = async () => {
       const supabase = createBrowserSupabaseClient();
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("display_name")
-        .eq("id", species.author)
-        .single();
+      const { data, error } = await supabase.from("profiles").select("display_name").eq("id", species.author).single();
 
       if (error) {
         return toast({
@@ -101,7 +96,7 @@ export default function SpeciesCard({ species, userId }: { species: Species; use
     };
 
     void fetchAuthorDisplayName();
-  }, [species.author])
+  }, [species.author]);
 
   const onSubmit = async (input: FormData) => {
     setLoading(true);
@@ -121,7 +116,7 @@ export default function SpeciesCard({ species, userId }: { species: Species; use
       })
       .eq("id", species.id);
 
-      router.refresh();
+    router.refresh();
 
     if (error) {
       setLoading(false);
@@ -138,7 +133,7 @@ export default function SpeciesCard({ species, userId }: { species: Species; use
     router.refresh();
 
     return toast({
-      title: input.scientific_name+ "information updated successfully!",
+      title: input.scientific_name + "information updated successfully!",
     });
   };
 
@@ -157,11 +152,7 @@ export default function SpeciesCard({ species, userId }: { species: Species; use
   const onDelete = async () => {
     setLoading(true);
     const supabase = createBrowserSupabaseClient();
-    const { error } = await supabase
-      .from("species")
-      .delete()
-      .eq("id", species.id);
-
+    const { error } = await supabase.from("species").delete().eq("id", species.id);
 
     if (error) {
       setLoading(false);
@@ -179,6 +170,10 @@ export default function SpeciesCard({ species, userId }: { species: Species; use
       title: "Species deleted",
     });
   };
+
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <div className="m-4 w-72 min-w-72 flex-none rounded border-2 p-3 shadow">
@@ -198,13 +193,13 @@ export default function SpeciesCard({ species, userId }: { species: Species; use
         <DialogContent className="max-h-screen overflow-y-auto sm:max-w-[600px]">
           {species.author !== userId ? (
             <>
-            <p>Scientific Name: {species.scientific_name}</p>
-            <p>Common Name: {species.common_name}</p>
-            <p>Total Population: {species.total_population}</p>
-            <p>Kingdom: {species.kingdom}</p>
-            <p>Description: {species.description}</p>
-            <p>Endangered: {species.endangered ? "Yes" : "No"}</p>
-            <p>Created by: {authorName}</p>
+              <p>Scientific Name: {species.scientific_name}</p>
+              <p>Common Name: {species.common_name}</p>
+              <p>Total Population: {species.total_population}</p>
+              <p>Kingdom: {species.kingdom}</p>
+              <p>Description: {species.description}</p>
+              <p>Endangered: {species.endangered ? "Yes" : "No"}</p>
+              <p>Created by: {authorName}</p>
             </>
           ) : (
             <Form {...form}>
@@ -233,7 +228,12 @@ export default function SpeciesCard({ species, userId }: { species: Species; use
                         <FormItem>
                           <FormLabel>Common Name</FormLabel>
                           <FormControl>
-                            <Input readOnly={!isEditing} value={value ?? ""} placeholder={defaultValues.common_name ?? ""} {...rest} />
+                            <Input
+                              readOnly={!isEditing}
+                              value={value ?? ""}
+                              placeholder={defaultValues.common_name ?? ""}
+                              {...rest}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -363,22 +363,30 @@ export default function SpeciesCard({ species, userId }: { species: Species; use
                   {isEditing && species.author === userId ? (
                     <>
                       <Button disabled={loading} type="submit" className="mr-2">
-                        {loading ? 'Deleting...' : 'Delete'}
+                        {loading ? "Updating species information..." : "Update species information"}
                       </Button>
                       <Button disabled={loading} variant="secondary" onClick={handleCancel}>
                         Cancel
                       </Button>
-                      <Button disabled={loading} onClick={() => void onDelete()}>
-                        {loading ? 'Deleting...' : 'Delete'}
+                      <Button
+                        className="rounded bg-destructive px-4 py-2 text-destructive-foreground"
+                        disabled={loading}
+                        onClick={() => void onDelete()}
+                      >
+                        {loading ? "Deleting..." : "Delete"}
                       </Button>
                     </>
                   ) : (
-                    <Button onClick={startEditing} disabled={loading}>Edit Species</Button>
+                    <>
+                      <Button onClick={startEditing} disabled={loading}>
+                        Edit Species
+                      </Button>
+                    </>
                   )}
                 </div>
               </form>
             </Form>
-            )}
+          )}
         </DialogContent>
       </Dialog>
     </div>

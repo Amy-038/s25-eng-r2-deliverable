@@ -15,7 +15,7 @@ export default function SpeciesList() {
   type Species = Database["public"]["Tables"]["species"]["Row"];
 
   const [loading, setLoading] = useState(true);
-  const [species, setSpecies] = useState<Species[]>([]);
+  const [speciesList, setSpeciesList] = useState<Species[]>([]);
   const [filteredSpecies, setFilteredSpecies] = useState<Species[]>([]);
   const [userId,setUserId] = useState<string>("");
 
@@ -41,7 +41,7 @@ export default function SpeciesList() {
       if (error) {
         console.error("Error fetching species:", error);
       } else {
-        setSpecies(speciesData || []);
+        setSpeciesList(speciesData || []);
         setFilteredSpecies(speciesData || []);
       }
       setLoading(false);
@@ -53,15 +53,15 @@ export default function SpeciesList() {
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toLowerCase();
-    const searchValue = species.filter((speciesItem) => {
+    const searchValue = speciesList.filter((species) => {
       if (value === "") {
         return true;
       } else {
         return (
-          speciesItem.scientific_name.toLowerCase().includes(value) ||
+          species.scientific_name.toLowerCase().includes(value) ||
           // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-          speciesItem.common_name?.toLowerCase().includes(value) ||
-          speciesItem.description?.toLowerCase().includes(value)
+          species.common_name?.toLowerCase().includes(value) ||
+          species.description?.toLowerCase().includes(value)
         );
       }
     });
@@ -74,15 +74,17 @@ export default function SpeciesList() {
   }
   return (
     <>
+      <div className="mb-4">
+        <Searchbar onChange={onChange} />
+      </div>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <TypographyH2>Species List</TypographyH2>
-        <Searchbar onChange={onChange}/>
         <AddSpeciesDialog userId={userId} />
       </div>
       <Separator className="my-4" />
       <div className="flex flex-wrap justify-center">
-        {filteredSpecies?.map((speciesItem) => (
-          <SpeciesCard key={speciesItem.id} species={speciesItem} userId={userId} />
+        {filteredSpecies?.map((species) => (
+          <SpeciesCard key={species.id} species={species} userId={userId} />
         ))}
       </div>
     </>

@@ -59,6 +59,7 @@ export default function SpeciesList() {
       } else {
         return (
           speciesItem.scientific_name.toLowerCase().includes(value) ||
+          // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
           speciesItem.common_name?.toLowerCase().includes(value) ||
           speciesItem.description?.toLowerCase().includes(value)
         );
